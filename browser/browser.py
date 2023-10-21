@@ -1,4 +1,6 @@
+import sys
 from url import URL
+
 
 def show(body: str):
     in_angle = False
@@ -10,10 +12,11 @@ def show(body: str):
         elif not in_angle:
             print(c, end="")
 
+
 def load(url):
     headers, body = url.request()
     show(body)
 
+
 if __name__ == "__main__":
-    import sys
     load(URL(sys.argv[1]))

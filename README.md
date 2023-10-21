@@ -13,13 +13,20 @@ Prerequisites:
 # Create virtual environment
 python -m venv venv
 . venv/bin/activate || . venv/Scripts/activate
+
 # Install dependencies
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+
 # Check types
 mypy browser
+
 # Run tests
 pytest browser
+
+# Run browser
+python browser/browser.py http://example.org/
+
 # Exit virtual environment
 deactivate
 ```
