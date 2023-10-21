@@ -1,2 +1,7 @@
+from url import URL
+
 def test_url():
-    assert 2+2 == 4
+    url = URL("http://example.com/path/to/resource")
+    assert url.scheme == "http"
+    assert url.host == "example.com"
+    assert url.path == "/path/to/resource"
