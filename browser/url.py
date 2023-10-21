@@ -29,7 +29,13 @@ class URL:
         s.connect((self.host, self.port))
 
         # send request
-        request = f"GET {self.path} HTTP/1.0\r\nHost: {self.host}\r\n\r\n"
+        request = (
+            f"GET {self.path} HTTP/1.1\r\n"
+            f"Host: {self.host}\r\n"
+            f"Connection: close\r\n"
+            f"User-Agent: github.com/larsthorup/browser-python\r\n"
+            f"\r\n"
+        )
         s.send(request.encode("utf8"))
 
         # receive response
