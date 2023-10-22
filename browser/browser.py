@@ -1,7 +1,9 @@
 import os
 import tkinter
 import tkinter.font
+from typing import Literal
 
+import lexer
 from url import URL
 
 SCROLL_STEP = 54
@@ -15,15 +17,21 @@ class Browser:
     scroll: int
     font_size: int
     document_text: str
-    display_list: list[tuple[int, int, str]]
+    weight: Literal['normal', 'bold']
+    style: Literal["roman", 'italic']
+    font: tkinter.font.Font
+    display_list: list[tuple[int, int, str, tkinter.font.Font]]
 
     def __init__(self):
         self.width = 800
         self.height = 600
         self.font_size = 9
+        self.weight = "normal"
+        self.style = "roman"
         self.window = tkinter.Tk()
         self.canvas = tkinter.Canvas(self.window, width=self.width, height=self.height)
         self.canvas.pack(fill="both", expand=True)
+        self.update_font(force=True)
         self.scroll = 0
         self.display_list = []
         self.window.bind("<Down>", self.handle_key_down)
@@ -38,17 +46,16 @@ class Browser:
         self.render()
 
     def render(self):
-        text = lex(self.document_text)
+        tokens = lexer.lex(self.document_text)
         self.vstep = self.font_size * 2
         self.hstep = int(self.font_size * 1.5)
         self.paragraph_step = int(1.5 * self.vstep)
-        self.display_list = self.layout(text)
+        self.layout(tokens)
         self.draw()
 
     def draw(self):
         self.canvas.delete("all")
-        font = tkinter.font.Font(size=self.font_size)
-        for x, y, c in self.display_list:
+        for x, y, c, font in self.display_list:
             if y > self.scroll + self.height:
                 # skip drawing text below the bottom of the window
                 continue
@@ -88,31 +95,43 @@ class Browser:
         self.font_size = font_size
         self.render()
 
-    def layout(self, text: str):
-        display_list: list[tuple[int, int, str]] = []
+    def layout(self, tokens: list[lexer.Token]):
+        self.display_list = []
         cursor_x, cursor_y = self.hstep, self.vstep
-        for c in text:
-            if c == "\n":
-                cursor_y += self.paragraph_step
-                cursor_x = self.hstep
-            else:
-                display_list.append((cursor_x, cursor_y, c))
-                cursor_x += self.hstep
-                if cursor_x >= self.width - self.hstep:
-                    cursor_y += self.vstep
+        for token in tokens:
+            if isinstance(token, lexer.Text):
+                for word in token.text.split():
+                    width = self.font.measure(word)
+                    if cursor_x + width > self.width - self.hstep:
+                        cursor_y += int(self.font.metrics("linespace") * 1.25)
+                        cursor_x = self.hstep
+                    self.display_list.append((cursor_x, cursor_y, word, self.font))
+                    cursor_x += width + self.font.measure(" ")
+            elif isinstance(token, lexer.Tag):
+                if token.tag == "br":
+                    cursor_y += int(self.font.metrics("linespace") * 1.25)
                     cursor_x = self.hstep
-        return display_list
+                elif token.tag in ["i", "em"]:
+                    self.update_font(style="italic")
+                elif token.tag in ["/i", "/em"]:
+                    self.update_font(style="roman")
+                elif token.tag == "b":
+                    self.update_font(weight="bold")
+                elif token.tag == "/b":
+                    self.update_font(weight="normal")
+            else:
+                assert False, f"Unknown token type: {token}"
 
-
-def lex(body: str):
-    # TODO: handle entities
-    text = ""
-    in_angle = False
-    for c in body:
-        if c == "<":
-            in_angle = True
-        elif c == ">":
-            in_angle = False
-        elif not in_angle:
-            text += c
-    return text
+    def update_font(self, weight=None, style=None, force=False):
+        if weight is None:
+            weight = self.weight
+        if style is None:
+            style = self.style
+        if weight != self.weight or style != self.style or force:
+            self.weight = weight
+            self.style = style
+            self.font = tkinter.font.Font(
+                size=self.font_size,
+                weight=self.weight,
+                slant=self.style,
+            )
