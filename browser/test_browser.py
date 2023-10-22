@@ -31,7 +31,7 @@ def test_browser_scroll():
         # when scrolling down
         canvas.delete.reset_mock()
         canvas.create_text.reset_mock()
-        browser.scroll_down(tkinter.Event())
+        browser.handle_key_down(tkinter.Event())
 
         # then only the last line is drawn
         canvas.delete.assert_called_once_with("all")
@@ -44,7 +44,7 @@ def test_browser_scroll():
         # when scrolling back up
         canvas.delete.reset_mock()
         canvas.create_text.reset_mock()
-        browser.scroll_up(tkinter.Event())
+        browser.handle_key_up(tkinter.Event())
 
         # then all lines are drawn
         canvas.delete.assert_called_once_with("all")

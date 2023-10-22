@@ -1,6 +1,8 @@
 import os
 import tkinter
 
+from url import URL
+
 WIDTH, HEIGHT = 800, 600
 HSTEP, VSTEP = 13, 18
 PARAGRAPH_STEP = int(1.5 * VSTEP)
@@ -8,31 +10,40 @@ SCROLL_STEP = 3 * VSTEP
 
 
 class Browser:
+    width: int
+    height: int
     window: tkinter.Tk
     canvas: tkinter.Canvas
     scroll: int
+    document_text: str
     display_list: list[tuple[int, int, str]]
 
     def __init__(self):
+        self.width = WIDTH
+        self.height = HEIGHT
         self.window = tkinter.Tk()
-        self.canvas = tkinter.Canvas(self.window, width=WIDTH, height=HEIGHT)
-        self.canvas.pack()
+        self.canvas = tkinter.Canvas(self.window, width=self.width, height=self.height)
+        self.canvas.pack(fill="both", expand=True)
         self.scroll = 0
         self.display_list = []
-        self.window.bind("<Down>", self.scroll_down)
-        self.window.bind("<Up>", self.scroll_up)
-        self.window.bind("<MouseWheel>", self.mouse_wheel)
+        self.window.bind("<Down>", self.handle_key_down)
+        self.window.bind("<Up>", self.handle_key_up)
+        self.window.bind("<MouseWheel>", self.handle_mouse_wheel)
+        self.window.bind("<Configure>", self.handle_configure)
     
-    def load(self, url):
-        _, body = url.request()
-        text = lex(body)
-        self.display_list = layout(text)
+    def load(self, url: URL):
+        _, self.document_text = url.request()
+        self.render()
+
+    def render(self):
+        text = lex(self.document_text)
+        self.display_list = self.layout(text)
         self.draw()
 
     def draw(self):
         self.canvas.delete("all")
         for x, y, c in self.display_list:
-            if y > self.scroll + HEIGHT: 
+            if y > self.scroll + self.height: 
                 # skip drawing text below the bottom of the window
                 continue
             if y + VSTEP < self.scroll: 
@@ -40,22 +51,41 @@ class Browser:
                 continue
             self.canvas.create_text(x, y - self.scroll, text=c)
 
-    def scroll_down(self, _: tkinter.Event):
+    def handle_key_down(self, _: tkinter.Event):
         self.scroll_to(self.scroll + SCROLL_STEP)
 
-    def scroll_up(self, _: tkinter.Event):
+    def handle_key_up(self, _: tkinter.Event):
         self.scroll_to(self.scroll - SCROLL_STEP)
 
-    def mouse_wheel(self, event: tkinter.Event):
+    def handle_mouse_wheel(self, event: tkinter.Event):
         assert os.name == "nt", f"Unsupported mouse wheel event on {os.name}"
         self.scroll_to(self.scroll - event.delta)
             
+    def handle_configure(self, event: tkinter.Event):
+        self.width = event.width
+        self.height = event.height
+        self.render()
 
     def scroll_to(self, y: int):
         self.scroll = y
         if self.scroll < 0:
             self.scroll = 0
         self.draw()
+
+    def layout(self, text: str):
+        display_list: list[tuple[int, int, str]] = []
+        cursor_x, cursor_y = HSTEP, VSTEP
+        for c in text:
+            if (c == "\n"):
+                cursor_y += PARAGRAPH_STEP
+                cursor_x = HSTEP
+            else:
+                display_list.append((cursor_x, cursor_y, c))
+                cursor_x += HSTEP
+                if cursor_x >= self.width - HSTEP:
+                    cursor_y += VSTEP
+                    cursor_x = HSTEP
+        return display_list
 
 def lex(body: str):
     # TODO: handle entities
@@ -69,19 +99,3 @@ def lex(body: str):
         elif not in_angle:
             text += c
     return text
-
-
-def layout(text: str):
-    display_list: list[tuple[int, int, str]] = []
-    cursor_x, cursor_y = HSTEP, VSTEP
-    for c in text:
-        if (c == "\n"):
-            cursor_y += PARAGRAPH_STEP
-            cursor_x = HSTEP
-        else:
-            display_list.append((cursor_x, cursor_y, c))
-            cursor_x += HSTEP
-            if cursor_x >= WIDTH - HSTEP:
-                cursor_y += VSTEP
-                cursor_x = HSTEP
-    return display_list
