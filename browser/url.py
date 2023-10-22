@@ -27,11 +27,11 @@ class URL:
         self.path = f"/{url}"
 
     def request(self):
+        headers: dict[str, str] = {}
         if self.scheme in ["http", "https"]:
             resource, response, headers = self.get_socket_response()
 
         if self.scheme == "file":
-            headers: dict[str, str] = {}
             resource, response = self.get_file_response()
 
         # TODO: handle data: schema
@@ -79,8 +79,8 @@ class URL:
                 break
             header, value = line.split(":", 1)
             headers[header.lower()] = value.strip()
-        assert "transfer-encoding" not in headers
-        assert "content-encoding" not in headers
+        assert "transfer-encoding" not in headers, headers
+        assert "content-encoding" not in headers, headers
 
         return socket, response, headers
 

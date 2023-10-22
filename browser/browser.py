@@ -1,25 +1,51 @@
 import tkinter
 
 WIDTH, HEIGHT = 800, 600
+HSTEP, VSTEP = 13, 18
+SCROLL_STEP = 100
 
 
 class Browser:
+    window: tkinter.Tk
+    canvas: tkinter.Canvas
+    scroll: int
+    display_list: list[tuple[int, int, str]]
+
     def __init__(self):
         self.window = tkinter.Tk()
         self.canvas = tkinter.Canvas(self.window, width=WIDTH, height=HEIGHT)
         self.canvas.pack()
-
+        self.scroll = 0
+        self.display_list = []
+        self.window.bind("<Down>", self.scroll_down)
+        self.window.bind("<Up>", self.scroll_up)
+    
     def load(self, url):
         _, body = url.request()
         text = lex(body)
-        HSTEP, VSTEP = 13, 18
-        cursor_x, cursor_y = HSTEP, VSTEP
-        for c in text:
-            self.canvas.create_text(cursor_x, cursor_y, text=c)
-            cursor_x += HSTEP
-            if cursor_x >= WIDTH - HSTEP:
-                cursor_y += VSTEP
-                cursor_x = HSTEP
+        self.display_list = layout(text)
+        self.draw()
+
+    def draw(self):
+        self.canvas.delete("all")
+        for x, y, c in self.display_list:
+            if y > self.scroll + HEIGHT: 
+                # skip drawing text below the bottom of the window
+                continue
+            if y + VSTEP < self.scroll: 
+                # skip drawing text above the top of the window
+                continue
+            self.canvas.create_text(x, y - self.scroll, text=c)
+
+    def scroll_down(self, _):
+        self.scroll += SCROLL_STEP
+        self.draw()
+
+    def scroll_up(self, _):
+        self.scroll -= SCROLL_STEP
+        if self.scroll < 0:
+            self.scroll = 0
+        self.draw()
 
 def lex(body: str):
     # TODO: handle entities
@@ -33,3 +59,15 @@ def lex(body: str):
         elif not in_angle:
             text += c
     return text
+
+
+def layout(text: str):
+    display_list: list[tuple[int, int, str]] = []
+    cursor_x, cursor_y = HSTEP, VSTEP
+    for c in text:
+        display_list.append((cursor_x, cursor_y, c))
+        cursor_x += HSTEP
+        if cursor_x >= WIDTH - HSTEP:
+            cursor_y += VSTEP
+            cursor_x = HSTEP
+    return display_list
