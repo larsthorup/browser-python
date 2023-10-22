@@ -6,25 +6,27 @@ from url import URL
 
 
 def test_browser_draw():
-    with patch("tkinter.Tk") as Tk, patch("tkinter.Canvas") as Canvas:
+    with patch("tkinter.Tk"), patch("tkinter.Canvas") as Canvas, patch("tkinter.font.Font") as Font:
         browser = Browser()
         canvas = Canvas.return_value
+        font = Font.return_value
         url = URL("data:text/html,<b>ab</b>\nc")
         browser.load(url)
         canvas.delete.assert_called_once_with("all")
         canvas.create_text.assert_has_calls(
             [
-                call(13, 18, text="a"),
-                call(26, 18, text="b"),
-                call(13, 45, text="c"),
+                call(13, 18, text="a", font=font),
+                call(26, 18, text="b", font=font),
+                call(13, 45, text="c", font=font),
             ]
         )
 
 
 def test_browser_scroll():
-    with patch("tkinter.Tk") as Tk, patch("tkinter.Canvas") as Canvas:
+    with patch("tkinter.Tk"), patch("tkinter.Canvas") as Canvas, patch("tkinter.font.Font") as Font:
         browser = Browser()
         canvas = Canvas.return_value
+        font = Font.return_value
         url = URL("data:text/html,<b>ab</b>\nc")
         browser.load(url)
 
@@ -37,7 +39,7 @@ def test_browser_scroll():
         canvas.delete.assert_called_once_with("all")
         canvas.create_text.assert_has_calls(
             [
-                call(13, -9, text="c"),
+                call(13, -9, text="c", font=font),
             ]
         )
 
@@ -50,8 +52,8 @@ def test_browser_scroll():
         canvas.delete.assert_called_once_with("all")
         canvas.create_text.assert_has_calls(
             [
-                call(13, 18, text="a"),
-                call(26, 18, text="b"),
-                call(13, 45, text="c"),
+                call(13, 18, text="a", font=font),
+                call(26, 18, text="b", font=font),
+                call(13, 45, text="c", font=font),
             ]
         )
