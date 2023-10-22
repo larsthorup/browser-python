@@ -3,6 +3,7 @@ from url import URL
 
 
 def show(body: str):
+    # TODO: handle entities
     in_angle = False
     for c in body:
         if c == "<":
