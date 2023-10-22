@@ -15,9 +15,9 @@ def test_browser_draw():
         canvas.delete.assert_called_once_with("all")
         canvas.create_text.assert_has_calls(
             [
-                call(13, 18, text="a", font=font),
-                call(26, 18, text="b", font=font),
-                call(13, 45, text="c", font=font),
+                call(13, 18, text="a", font=font, anchor="nw"),
+                call(26, 18, text="b", font=font, anchor="nw"),
+                call(13, 45, text="c", font=font, anchor="nw"),
             ]
         )
 
@@ -39,7 +39,7 @@ def test_browser_scroll():
         canvas.delete.assert_called_once_with("all")
         canvas.create_text.assert_has_calls(
             [
-                call(13, -9, text="c", font=font),
+                call(13, -9, text="c", font=font, anchor="nw"),
             ]
         )
 
@@ -52,8 +52,8 @@ def test_browser_scroll():
         canvas.delete.assert_called_once_with("all")
         canvas.create_text.assert_has_calls(
             [
-                call(13, 18, text="a", font=font),
-                call(26, 18, text="b", font=font),
-                call(13, 45, text="c", font=font),
+                call(13, 18, text="a", font=font, anchor="nw"),
+                call(26, 18, text="b", font=font, anchor="nw"),
+                call(13, 45, text="c", font=font, anchor="nw"),
             ]
         )

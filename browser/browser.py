@@ -55,7 +55,7 @@ class Browser:
             if y + self.vstep < self.scroll:
                 # skip drawing text above the top of the window
                 continue
-            self.canvas.create_text(x, y - self.scroll, text=c, font=font)
+            self.canvas.create_text(x, y - self.scroll, text=c, font=font, anchor="nw")
 
     def handle_key_down(self, _: tkinter.Event):
         self.scroll_to(self.scroll + SCROLL_STEP)
