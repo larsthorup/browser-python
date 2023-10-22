@@ -3,6 +3,7 @@ import tkinter
 WIDTH, HEIGHT = 800, 600
 HSTEP, VSTEP = 13, 18
 SCROLL_STEP = 100
+PARAGRAPH_STEP = int(1.5 * VSTEP)
 
 
 class Browser:
@@ -65,9 +66,13 @@ def layout(text: str):
     display_list: list[tuple[int, int, str]] = []
     cursor_x, cursor_y = HSTEP, VSTEP
     for c in text:
-        display_list.append((cursor_x, cursor_y, c))
-        cursor_x += HSTEP
-        if cursor_x >= WIDTH - HSTEP:
-            cursor_y += VSTEP
+        if (c == "\n"):
+            cursor_y += PARAGRAPH_STEP
             cursor_x = HSTEP
+        else:
+            display_list.append((cursor_x, cursor_y, c))
+            cursor_x += HSTEP
+            if cursor_x >= WIDTH - HSTEP:
+                cursor_y += VSTEP
+                cursor_x = HSTEP
     return display_list

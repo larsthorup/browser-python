@@ -70,7 +70,6 @@ class URL:
 
         # receive response
         response = s.makefile("r", encoding="utf8", newline="\r\n")
-        print(response)
 
         # parse status
         statusline = response.readline()
