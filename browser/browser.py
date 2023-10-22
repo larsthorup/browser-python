@@ -1,3 +1,4 @@
+import os
 import tkinter
 
 WIDTH, HEIGHT = 800, 600
@@ -20,6 +21,7 @@ class Browser:
         self.display_list = []
         self.window.bind("<Down>", self.scroll_down)
         self.window.bind("<Up>", self.scroll_up)
+        self.window.bind("<MouseWheel>", self.mouse_wheel)
     
     def load(self, url):
         _, body = url.request()
@@ -39,11 +41,18 @@ class Browser:
             self.canvas.create_text(x, y - self.scroll, text=c)
 
     def scroll_down(self, _: tkinter.Event):
-        self.scroll += SCROLL_STEP
-        self.draw()
+        self.scroll_to(self.scroll + SCROLL_STEP)
 
     def scroll_up(self, _: tkinter.Event):
-        self.scroll -= SCROLL_STEP
+        self.scroll_to(self.scroll - SCROLL_STEP)
+
+    def mouse_wheel(self, event: tkinter.Event):
+        assert os.name == "nt", f"Unsupported mouse wheel event on {os.name}"
+        self.scroll_to(self.scroll - event.delta)
+            
+
+    def scroll_to(self, y: int):
+        self.scroll = y
         if self.scroll < 0:
             self.scroll = 0
         self.draw()
