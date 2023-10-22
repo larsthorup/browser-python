@@ -2,8 +2,8 @@ import tkinter
 
 WIDTH, HEIGHT = 800, 600
 HSTEP, VSTEP = 13, 18
-SCROLL_STEP = 100
 PARAGRAPH_STEP = int(1.5 * VSTEP)
+SCROLL_STEP = 3 * VSTEP
 
 
 class Browser:
@@ -38,11 +38,11 @@ class Browser:
                 continue
             self.canvas.create_text(x, y - self.scroll, text=c)
 
-    def scroll_down(self, _):
+    def scroll_down(self, _: tkinter.Event):
         self.scroll += SCROLL_STEP
         self.draw()
 
-    def scroll_up(self, _):
+    def scroll_up(self, _: tkinter.Event):
         self.scroll -= SCROLL_STEP
         if self.scroll < 0:
             self.scroll = 0
