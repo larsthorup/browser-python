@@ -25,7 +25,7 @@ mypy browser
 pytest browser
 
 # Run browser
-python browser/browser.py http://example.org/
+python browser http://example.org/
 
 # Exit virtual environment
 deactivate
