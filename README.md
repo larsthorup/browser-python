@@ -21,8 +21,17 @@ pip install -r requirements.txt
 # Check types
 mypy browser
 
-# Run tests
-pytest browser
+# Run only unit tests
+pytest
+
+# Run all tests
+INTEGRATION_TESTS=1 pytest
+
+# Produce code coverage
+coverage run -m pytest && coverage html
+
+# Browse code coverage
+open htmlcov/index.html || start htmlcov/index.html
 
 # Run browser
 python browser http://example.org/

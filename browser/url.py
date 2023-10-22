@@ -1,5 +1,6 @@
+import io
 import os
-from socket import socket as Socket, AF_INET, SOCK_STREAM
+import socket
 import ssl
 
 
@@ -7,34 +8,39 @@ class URL:
     scheme: str
     host: str
     port: int
-    path: str
+    pathname: str
 
     def __init__(self, url: str):
-        self.scheme, url = url.split("://", maxsplit=1)
+        self.scheme, url = url.split(":", maxsplit=1)
         assert self.scheme in [
+            "data",
+            "file",
             "http",
             "https",
-            "file",
         ], f"Unsupported scheme: {self.scheme}"
-        if self.scheme == "http":
-            self.port = 80
-        elif self.scheme == "https":
-            self.port = 443
-        self.host, url = url.split("/", maxsplit=1)
-        if ":" in self.host:
-            self.host, port = self.host.split(":", 1)
-            self.port = int(port)
-        self.path = f"/{url}"
+        if self.scheme == "data":
+            self.pathname = url
+        else:
+            _, url = url.split("//", maxsplit=1)
+            if self.scheme in ["http", "https"]:
+                self.port = 80 if self.scheme == "http" else 443
+                self.host, url = url.split("/", maxsplit=1)
+                if ":" in self.host:
+                    self.host, port = self.host.split(":", 1)
+                    self.port = int(port)
+                self.pathname = f"/{url}"
+            if self.scheme == "file":
+                self.pathname = url
 
     def request(self):
-        headers: dict[str, str] = {}
         if self.scheme in ["http", "https"]:
             resource, response, headers = self.get_socket_response()
 
         if self.scheme == "file":
-            resource, response = self.get_file_response()
+            resource, response, headers = self.get_file_response()
 
-        # TODO: handle data: schema
+        if self.scheme == "data":
+            resource, response, headers = self.get_data_response()
 
         # read body
         # TODO: switch encoding if requested in headers or meta tag
@@ -46,24 +52,25 @@ class URL:
 
     def get_socket_response(self):
         # connect
-        socket = Socket(AF_INET, SOCK_STREAM)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if self.scheme == "https":
             ctx = ssl.create_default_context()
-            socket = ctx.wrap_socket(socket, server_hostname=self.host)
-        socket.connect((self.host, self.port))
+            s = ctx.wrap_socket(s, server_hostname=self.host)
+        s.connect((self.host, self.port))
 
         # send request
         request = (
-            f"GET {self.path} HTTP/1.1\r\n"
+            f"GET {self.pathname} HTTP/1.1\r\n"
             f"Host: {self.host}\r\n"
             f"Connection: close\r\n"
             f"User-Agent: github.com/larsthorup/browser-python\r\n"
             f"\r\n"
         )
-        socket.send(request.encode("utf8"))
+        s.send(request.encode("utf8"))
 
         # receive response
-        response = socket.makefile("r", encoding="utf8", newline="\r\n")
+        response = s.makefile("r", encoding="utf8", newline="\r\n")
+        print(response)
 
         # parse status
         statusline = response.readline()
@@ -79,13 +86,22 @@ class URL:
                 break
             header, value = line.split(":", 1)
             headers[header.lower()] = value.strip()
-        assert "transfer-encoding" not in headers, headers
+        # assert "transfer-encoding" not in headers, headers
         assert "content-encoding" not in headers, headers
 
-        return socket, response, headers
+        return s, response, headers
 
     def get_file_response(self):
         # open file
-        path = self.path[1:].replace("/", os.sep) if os.name == "nt" else self.path
+        path = (
+            self.pathname[1:].replace("/", os.sep) if os.name == "nt" else self.pathname
+        )
         file = open(path, "r", encoding="utf8")
-        return file, file
+        return file, file, {}
+
+    def get_data_response(self):
+        resource = None
+        mime_type, body = self.pathname.split(",", maxsplit=1)
+        headers = {"content-type": mime_type}
+        file = io.StringIO(body)
+        return resource, file, headers

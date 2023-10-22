@@ -1,2 +1,3 @@
 mypy browser
-pytest browser
+INTEGRATION_TESTS=1 coverage run -m pytest browser -v
+coverage report

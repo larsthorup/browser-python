@@ -1,0 +1,6 @@
+[run]
+source =
+    browser
+omit =
+    # omit tests
+    browser/**/test_*
