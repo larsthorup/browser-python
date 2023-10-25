@@ -2,7 +2,8 @@ import io
 import os
 import pytest
 from unittest.mock import patch
-from url import URL
+
+from .url import URL
 
 
 def test_url_http():

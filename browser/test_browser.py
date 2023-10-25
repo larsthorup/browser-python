@@ -2,8 +2,8 @@ import tkinter
 import tkinter.font
 from unittest.mock import call, patch
 
-from browser import Browser
-from url import URL
+from .browser import Browser 
+from .url import URL
 
 class MockFont:
     def __init__(self, *args, **kwargs):
