@@ -1,6 +1,8 @@
 import tkinter
 from typing import Literal, TypeAlias
 
+from browser.font import get_font
+
 from . import lexer
 
 
@@ -31,7 +33,6 @@ class Layout:
         self.cursor_y = self.vstep
         self.weight = "normal"
         self.style = "roman"
-        self.update_font(force=True)
         self.width = width
         for tok in tokens:
             self.token(tok)
@@ -46,21 +47,21 @@ class Layout:
             if token.tag == "br":
                 self.flush()
             elif token.tag in ["i", "em"]:
-                self.update_font(style="italic")
+                self.style = "italic"
             elif token.tag in ["/i", "/em"]:
-                self.update_font(style="roman")
+                self.style = "roman"
             elif token.tag == "b":
-                self.update_font(weight="bold")
+                self.weight = "bold"
             elif token.tag == "/b":
-                self.update_font(weight="normal")
+                self.weight = "normal"
             elif token.tag == "small":
-                self.update_font(size=self.size - 2)
+                self.size = self.size - 2
             elif token.tag == "/small":
-                self.update_font(size=self.size + 2)
+                self.size = self.size + 2
             elif token.tag == "big":
-                self.update_font(size=self.size + 4)
+                self.size = self.size + 4
             elif token.tag == "/big":
-                self.update_font(size=self.size - 4)
+                self.size = self.size - 4
             elif token.tag == "/p":
                 self.flush()
                 self.cursor_y += self.vstep
@@ -68,11 +69,12 @@ class Layout:
             assert False, f"Unknown token type: {token}"
 
     def word(self, word: str):
-        word_width = self.font.measure(word)
+        font = get_font(size=self.size, weight=self.weight, slant=self.style)
+        word_width = font.measure(word)
         if self.cursor_x + word_width > self.width - self.hstep:
             self.flush()
-        self.line.append((self.cursor_x, word, self.font))
-        self.cursor_x += word_width + self.font.measure(" ")
+        self.line.append((self.cursor_x, word, font))
+        self.cursor_x += word_width + font.measure(" ")
 
     def flush(self):
         metrics = [font.metrics() for _, _, font in self.line]
@@ -85,20 +87,3 @@ class Layout:
         self.cursor_y = baseline + int(1.25 * max_descent)
         self.cursor_x = self.hstep
         self.line = []
-
-    def update_font(self, weight=None, style=None, size=None, force=False):
-        if weight is None:
-            weight = self.weight
-        if style is None:
-            style = self.style
-        if size is None:
-            size = self.size
-        if weight != self.weight or style != self.style or size != self.size or force:
-            self.weight = weight
-            self.style = style
-            self.size = size
-            self.font = tkinter.font.Font(
-                size=self.size,
-                weight=self.weight,
-                slant=self.style,
-            )
