@@ -5,10 +5,10 @@ from . import lexer
 
 
 DisplayItem: TypeAlias = tuple[int, int, str, tkinter.font.Font]
+LineItem: TypeAlias = tuple[int, str, tkinter.font.Font]
 
 
 class Layout:
-    display_list: list[DisplayItem]
     width: int
     vstep: int
     hstep: int
@@ -18,8 +18,11 @@ class Layout:
     style: Literal["roman", "italic"]
     size: int
     font: tkinter.font.Font
+    line: list[LineItem]
+    display_list: list[DisplayItem]
 
     def __init__(self, tokens: list[lexer.Token], width: int, size: int):
+        self.line = []
         self.display_list = []
         self.size = size
         self.vstep = self.size * 2
@@ -32,6 +35,8 @@ class Layout:
         self.width = width
         for tok in tokens:
             self.token(tok)
+        if self.line:
+            self.flush()
 
     def token(self, token: lexer.Token):
         if isinstance(token, lexer.Text):
@@ -39,8 +44,7 @@ class Layout:
                 self.word(word)
         elif isinstance(token, lexer.Tag):
             if token.tag == "br":
-                self.cursor_y += int(self.font.metrics("linespace") * 1.25)
-                self.cursor_x = self.hstep
+                self.flush()
             elif token.tag in ["i", "em"]:
                 self.update_font(style="italic")
             elif token.tag in ["/i", "/em"]:
@@ -63,11 +67,22 @@ class Layout:
     def word(self, word: str):
         word_width = self.font.measure(word)
         if self.cursor_x + word_width > self.width - self.hstep:
-            self.cursor_y += int(self.font.metrics("linespace") * 1.25)
-            self.cursor_x = self.hstep
-        display_item = (self.cursor_x, self.cursor_y, word, self.font)
-        self.display_list.append(display_item)
+            self.flush()
+        self.line.append((self.cursor_x, word, self.font))
         self.cursor_x += word_width + self.font.measure(" ")
+
+    def flush(self):
+        metrics = [font.metrics() for _, _, font in self.line]
+        max_ascent = max([metric["ascent"] for metric in metrics])
+        baseline = self.cursor_y + int(1.25 * max_ascent)
+        for x, word, font in self.line:
+            y = baseline - font.metrics("ascent")
+            self.display_list.append((x, y, word, font))
+        max_descent = max([metric["descent"] for metric in metrics])
+        print(max_ascent, max_descent)
+        self.cursor_y = baseline + int(1.25 * max_descent)
+        self.cursor_x = self.hstep
+        self.line = []
 
     def update_font(self, weight=None, style=None, size=None, force=False):
         if weight is None:
