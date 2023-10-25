@@ -6,6 +6,7 @@ from . import lexer
 
 DisplayItem: TypeAlias = tuple[int, int, str, tkinter.font.Font]
 
+
 class Layout:
     display_list: list[DisplayItem]
     width: int
@@ -13,11 +14,10 @@ class Layout:
     hstep: int
     cursor_x: int
     cursor_y: int
-    weight: Literal['normal', 'bold']
-    style: Literal["roman", 'italic']
+    weight: Literal["normal", "bold"]
+    style: Literal["roman", "italic"]
     size: int
     font: tkinter.font.Font
-
 
     def __init__(self, tokens: list[lexer.Token], width: int, size: int):
         self.display_list = []
@@ -32,7 +32,7 @@ class Layout:
         self.width = width
         for tok in tokens:
             self.token(tok)
-    
+
     def token(self, token: lexer.Token):
         if isinstance(token, lexer.Text):
             for word in token.text.split():
@@ -49,6 +49,14 @@ class Layout:
                 self.update_font(weight="bold")
             elif token.tag == "/b":
                 self.update_font(weight="normal")
+            elif token.tag == "small":
+                self.update_font(size=self.size - 2)
+            elif token.tag == "/small":
+                self.update_font(size=self.size + 2)
+            elif token.tag == "big":
+                self.update_font(size=self.size + 4)
+            elif token.tag == "/big":
+                self.update_font(size=self.size - 4)
         else:
             assert False, f"Unknown token type: {token}"
 
@@ -61,14 +69,17 @@ class Layout:
         self.display_list.append(display_item)
         self.cursor_x += word_width + self.font.measure(" ")
 
-    def update_font(self, weight=None, style=None, force=False):
+    def update_font(self, weight=None, style=None, size=None, force=False):
         if weight is None:
             weight = self.weight
         if style is None:
             style = self.style
-        if weight != self.weight or style != self.style or force:
+        if size is None:
+            size = self.size
+        if weight != self.weight or style != self.style or size != self.size or force:
             self.weight = weight
             self.style = style
+            self.size = size
             self.font = tkinter.font.Font(
                 size=self.size,
                 weight=self.weight,
