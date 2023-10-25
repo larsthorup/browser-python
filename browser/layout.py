@@ -61,6 +61,9 @@ class Layout:
                 self.update_font(size=self.size + 4)
             elif token.tag == "/big":
                 self.update_font(size=self.size - 4)
+            elif token.tag == "/p":
+                self.flush()
+                self.cursor_y += self.vstep
         else:
             assert False, f"Unknown token type: {token}"
 
@@ -79,7 +82,6 @@ class Layout:
             y = baseline - font.metrics("ascent")
             self.display_list.append((x, y, word, font))
         max_descent = max([metric["descent"] for metric in metrics])
-        print(max_ascent, max_descent)
         self.cursor_y = baseline + int(1.25 * max_descent)
         self.cursor_x = self.hstep
         self.line = []
