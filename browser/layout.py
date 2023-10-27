@@ -1,4 +1,5 @@
 import tkinter
+import tkinter.font
 from typing import Literal, TypeAlias
 
 from browser.font import get_font

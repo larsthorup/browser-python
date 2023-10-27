@@ -2,5 +2,6 @@
 source =
     browser
 omit =
-    # omit tests
-    browser/**/test_*
+    # omit tests and mocks
+    browser/__mocks__/**/*.py
+    browser/**/*_test.py
