@@ -1,8 +1,13 @@
 from .node import SELF_CLOSING_TAGS, Element, Node, Text
 
+HEAD_TAGS = [
+    "base", "basefont", "bgsound", "noscript",
+    "link", "meta", "title", "style", "script",
+]
+
 class HTMLParser:
     body: str
-    unfinished: list[Node]
+    unfinished: list[Element]
 
     def __init__(self, body: str):
         self.body = body
@@ -31,6 +36,7 @@ class HTMLParser:
         if text.isspace():
             # ignore whitespace only text nodes for brevity
             return
+        self.implicit_tags(None)
         if not self.unfinished:
             # handle any text before the first tag
             self.add_tag("html")
@@ -44,6 +50,7 @@ class HTMLParser:
         if tag.startswith("!"):
             # ignore comments and doctypes
             return
+        self.implicit_tags(tag)
         if tag.startswith("/"):
             if len(self.unfinished) == 1:
                 # ignore closing tags for the root element
@@ -87,3 +94,18 @@ class HTMLParser:
             else:
                 attributes[attrpair.lower()] = ""
         return tag, attributes
+    
+    def implicit_tags(self, tag: str | None):
+        while True:
+            open_tags = [node.tag for node in self.unfinished]
+            if open_tags == [] and tag != "html":
+                self.add_tag("html")
+            elif open_tags == ["html"] and tag not in ["head", "body", "/html"]:
+                if tag in HEAD_TAGS:
+                    self.add_tag("head")
+                else:
+                    self.add_tag("body")
+            elif open_tags == ["html", "head"] and tag not in ["/head"] + HEAD_TAGS:
+                self.add_tag("/head")
+            else:
+                break
