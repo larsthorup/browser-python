@@ -2,13 +2,14 @@ import tkinter
 import tkinter.font
 from typing import Literal, TypeAlias
 
-from browser.font import get_font
-
-from . import lexer
+from .font import get_font
+from .node import Element, Node, Text
 
 
 DisplayItem: TypeAlias = tuple[int, int, str, tkinter.font.Font]
 LineItem: TypeAlias = tuple[int, str, tkinter.font.Font]
+
+unimplemented_tags: list[str] = []
 
 
 class Layout:
@@ -24,7 +25,7 @@ class Layout:
     line: list[LineItem]
     display_list: list[DisplayItem]
 
-    def __init__(self, tokens: list[lexer.Token], width: int, size: int):
+    def __init__(self, root: Node, width: int, size: int):
         self.line = []
         self.display_list = []
         self.size = size
@@ -35,39 +36,57 @@ class Layout:
         self.weight = "normal"
         self.style = "roman"
         self.width = width
-        for tok in tokens:
-            self.token(tok)
+        self.recurse(root)
         if self.line:
             self.flush()
 
-    def token(self, token: lexer.Token):
-        if isinstance(token, lexer.Text):
-            for word in token.text.split():
+    def recurse(self, node: Node):
+        if isinstance(node, Text):
+            for word in node.text.split():
                 self.word(word)
-        elif isinstance(token, lexer.Tag):
-            if token.tag == "br":
-                self.flush()
-            elif token.tag in ["i", "em"]:
-                self.style = "italic"
-            elif token.tag in ["/i", "/em"]:
-                self.style = "roman"
-            elif token.tag == "b":
-                self.weight = "bold"
-            elif token.tag == "/b":
-                self.weight = "normal"
-            elif token.tag == "small":
-                self.size = self.size - 2
-            elif token.tag == "/small":
-                self.size = self.size + 2
-            elif token.tag == "big":
-                self.size = self.size + 4
-            elif token.tag == "/big":
-                self.size = self.size - 4
-            elif token.tag == "/p":
-                self.flush()
-                self.cursor_y += self.vstep
+        elif isinstance(node, Element):
+            self.open_tag(node.tag)
+            for child in node.children:
+                self.recurse(child)
+            self.close_tag(node.tag)
         else:
-            assert False, f"Unknown token type: {token}"
+            assert False, f"Unexpected node type: {type(node)}"
+
+    def open_tag(self, tag: str):
+        if tag == "br":
+            pass  # handled in close_tag
+        elif tag in ["i", "em"]:
+            self.style = "italic"
+        elif tag == "b":
+            self.weight = "bold"
+        elif tag == "small":
+            self.size = self.size - 2
+        elif tag == "big":
+            self.size = self.size + 4
+        elif tag == "p":
+            pass  # handled in close_tag
+        elif tag in unimplemented_tags:
+            pass
+        else:
+            print(f"Not implemented: <{tag}>")
+            unimplemented_tags.append(tag)
+
+    def close_tag(self, tag: str):
+        if tag == "br":
+            self.flush()
+        elif tag in ["i", "em"]:
+            self.style = "roman"
+        elif tag == "b":
+            self.weight = "normal"
+        elif tag == "small":
+            self.size = self.size + 2
+        elif tag == "big":
+            self.size = self.size - 4
+        elif tag == "p":
+            self.flush()
+            self.cursor_y += self.vstep
+        else:
+            pass
 
     def word(self, word: str):
         font = get_font(size=self.size, weight=self.weight, slant=self.style)

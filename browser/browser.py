@@ -3,7 +3,7 @@ import tkinter
 import tkinter.font
 from .layout import Layout
 
-from . import lexer
+from .parser import HTMLParser
 from .url import URL
 
 SCROLL_STEP = 54
@@ -38,8 +38,8 @@ class Browser:
         self.render()
 
     def render(self):
-        tokens = lexer.lex(self.document_text)
-        layout = Layout(tokens, self.width, self.font_size)
+        self.root = HTMLParser(self.document_text).parse()
+        layout = Layout(self.root, self.width, self.font_size)
         self.display_list = layout.display_list
         self.draw()
 
@@ -85,3 +85,4 @@ class Browser:
     def zoom_to(self, font_size: int):
         self.font_size = font_size
         self.render()
+        
