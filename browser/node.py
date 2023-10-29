@@ -26,18 +26,18 @@ class Node:
         self.parent = parent
         self.children = children
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, __class__)  # type: ignore[name-defined] # https://github.com/python/mypy/issues/4177
             and self.parent == other.parent
             and self.children == other.children
         )
 
-    def add_child(self, child: "Node"):
+    def add_child(self, child: "Node") -> None:
         self.children.append(child)
         child.parent = self
 
-    def print_tree(self, level: int = 0):
+    def print_tree(self, level: int = 0) -> None:
         print("  " * level, self)
         for child in self.children:
             child.print_tree(level + 1)
@@ -52,7 +52,7 @@ class Text(Node):
         super().__init__(parent, children or [])
         self.text = text
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.text
 
 
@@ -71,7 +71,7 @@ class Element(Node):
         self.tag = tag
         self.attributes = attributes or {}
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.tag}>"
 
 def outerHTML(node: Node) -> str:

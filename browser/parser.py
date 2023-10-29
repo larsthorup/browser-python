@@ -13,7 +13,7 @@ class HTMLParser:
         self.body = body
         self.unfinished = []
 
-    def parse(self):
+    def parse(self) -> Node:
         text = ""
         in_tag = False
         for c in self.body:
@@ -32,7 +32,7 @@ class HTMLParser:
             self.add_text(text)
         return self.finish()
 
-    def add_text(self, text: str):
+    def add_text(self, text: str) -> None:
         if text.isspace():
             # ignore whitespace only text nodes for brevity
             return
@@ -45,7 +45,7 @@ class HTMLParser:
         node = Text(text, parent)
         parent.add_child(node)
 
-    def add_tag(self, text: str):
+    def add_tag(self, text: str) -> None:
         tag, attributes = self.get_attributes(text)
         if tag.startswith("!"):
             # ignore comments and doctypes
@@ -70,7 +70,7 @@ class HTMLParser:
             node = Element(tag, attributes, parent_optional)
             self.unfinished.append(node)
 
-    def finish(self):
+    def finish(self) -> Node:
         if len(self.unfinished) == 0:
             # handle empty documents
             self.add_tag("html")
@@ -81,7 +81,7 @@ class HTMLParser:
             parent.add_child(node)
         return self.unfinished.pop()
     
-    def get_attributes(self, text: str):
+    def get_attributes(self, text: str) -> tuple[str, dict[str, str]]:
         parts = text.split()
         tag = parts[0].lower()
         attributes = {}
@@ -95,7 +95,7 @@ class HTMLParser:
                 attributes[attrpair.lower()] = ""
         return tag, attributes
     
-    def implicit_tags(self, tag: str | None):
+    def implicit_tags(self, tag: str | None) -> None:
         while True:
             open_tags = [node.tag for node in self.unfinished]
             if open_tags == [] and tag != "html":

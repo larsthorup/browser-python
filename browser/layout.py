@@ -40,7 +40,7 @@ class Layout:
         if self.line:
             self.flush()
 
-    def recurse(self, node: Node):
+    def recurse(self, node: Node) -> None:
         if isinstance(node, Text):
             for word in node.text.split():
                 self.word(word)
@@ -52,7 +52,7 @@ class Layout:
         else:
             assert False, f"Unexpected node type: {type(node)}"
 
-    def open_tag(self, tag: str):
+    def open_tag(self, tag: str) -> None:
         if tag == "br":
             pass  # handled in close_tag
         elif tag in ["i", "em"]:
@@ -71,7 +71,7 @@ class Layout:
             print(f"Not implemented: <{tag}>")
             unimplemented_tags.append(tag)
 
-    def close_tag(self, tag: str):
+    def close_tag(self, tag: str) -> None:
         if tag == "br":
             self.flush()
         elif tag in ["i", "em"]:
@@ -88,7 +88,7 @@ class Layout:
         else:
             pass
 
-    def word(self, word: str):
+    def word(self, word: str) -> None:
         font = get_font(size=self.size, weight=self.weight, slant=self.style)
         word_width = font.measure(word)
         if self.cursor_x + word_width > self.width - self.hstep:
@@ -96,7 +96,7 @@ class Layout:
         self.line.append((self.cursor_x, word, font))
         self.cursor_x += word_width + font.measure(" ")
 
-    def flush(self):
+    def flush(self) -> None:
         metrics = [font.metrics() for _, _, font in self.line]
         max_ascent = max([metric["ascent"] for metric in metrics])
         baseline = self.cursor_y + int(1.25 * max_ascent)

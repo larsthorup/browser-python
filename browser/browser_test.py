@@ -7,7 +7,7 @@ from .browser import Browser
 from .url import URL
 
 
-def test_browser_draw():
+def test_browser_draw() -> None:
     with patch("tkinter.Tk"), patch("tkinter.Canvas") as Canvas, patch(
         "tkinter.font.Font", new=MockFont
     ):
@@ -25,7 +25,7 @@ def test_browser_draw():
         )
 
 
-def test_browser_scroll():
+def test_browser_scroll() -> None:
     with patch("tkinter.Tk"), patch("tkinter.Canvas") as Canvas, patch(
         "tkinter.font.Font", new=MockFont
     ):

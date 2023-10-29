@@ -6,7 +6,7 @@ from unittest.mock import patch
 from .url import URL
 
 
-def test_url_http():
+def test_url_http() -> None:
     url = URL("http://example.com/path/to/resource")
     assert url.scheme == "http"
     assert url.host == "example.com"
@@ -14,7 +14,7 @@ def test_url_http():
     assert url.pathname == "/path/to/resource"
 
 
-def test_url_https():
+def test_url_https() -> None:
     url = URL("https://example.com/path/to/resource")
     assert url.scheme == "https"
     assert url.host == "example.com"
@@ -22,7 +22,7 @@ def test_url_https():
     assert url.pathname == "/path/to/resource"
 
 
-def test_url_localhost():
+def test_url_localhost() -> None:
     url = URL("http://localhost:8000/path/to/resource")
     assert url.scheme == "http"
     assert url.host == "localhost"
@@ -30,25 +30,25 @@ def test_url_localhost():
     assert url.pathname == "/path/to/resource"
 
 
-def test_url_file():
+def test_url_file() -> None:
     url = URL("file:///path/to/resource")
     assert url.scheme == "file"
     assert url.pathname == "/path/to/resource"
 
-def test_url_data():
+def test_url_data() -> None:
     url = URL("data:text/html,Hello World!")
     assert url.scheme == "data"
     assert url.pathname == "text/html,Hello World!"
 
 
-def test_data_request():
+def test_data_request() -> None:
     url = URL("data:text/html,Hello World!")
     headers, body = url.request()
     assert headers == {"content-type": "text/html"}
     assert body == "Hello World!"
 
 
-def test_request():
+def test_request() -> None:
     with patch("socket.socket") as socket:
         s = socket.return_value
 
@@ -77,7 +77,7 @@ def test_request():
 @pytest.mark.skipif(
     not os.environ.get("INTEGRATION_TESTS", False), reason="not INTEGRATION_TESTS"
 )
-def test_https_request():
+def test_https_request() -> None:
     url = URL("https://example.com/")
     headers, body = url.request()
     assert headers["content-type"] == "text/html; charset=UTF-8"
@@ -89,7 +89,7 @@ def test_https_request():
 @pytest.mark.skipif(
     not os.environ.get("INTEGRATION_TESTS", False), reason="not INTEGRATION_TESTS"
 )
-def test_integration_file_request():
+def test_integration_file_request() -> None:
     dir_path = os.path.dirname(os.path.realpath(__file__))
     dir_url_path = "/" + dir_path.replace(os.sep, "/") if os.name == "nt" else dir_path
     url = URL(f"file://{dir_url_path}/test.html")

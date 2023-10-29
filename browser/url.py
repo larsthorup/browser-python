@@ -32,15 +32,16 @@ class URL:
             if self.scheme == "file":
                 self.pathname = url
 
-    def request(self):
+    def request(self) -> tuple[dict[str, str], str]:
+        resource: socket.socket | io.TextIOWrapper | None
         if self.scheme in ["http", "https"]:
             resource, response, headers = self.get_socket_response()
-
-        if self.scheme == "file":
+        elif self.scheme == "file":
             resource, response, headers = self.get_file_response()
-
-        if self.scheme == "data":
+        elif self.scheme == "data":
             resource, response, headers = self.get_data_response()
+        else:
+            assert False, f"Unsupported scheme: {self.scheme}"
 
         # read body
         # TODO: switch encoding if requested in headers or meta tag
@@ -50,7 +51,7 @@ class URL:
 
         return headers, body
 
-    def get_socket_response(self):
+    def get_socket_response(self) -> tuple[socket.socket, io.TextIOWrapper, dict[str, str]]:
         # connect
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if self.scheme == "https":
@@ -90,7 +91,7 @@ class URL:
 
         return s, response, headers
 
-    def get_file_response(self):
+    def get_file_response(self) -> tuple[io.TextIOWrapper, io.TextIOWrapper, dict[str, str]]:
         # open file
         path = (
             self.pathname[1:].replace("/", os.sep) if os.name == "nt" else self.pathname
@@ -98,7 +99,7 @@ class URL:
         file = open(path, "r", encoding="utf8")
         return file, file, {}
 
-    def get_data_response(self):
+    def get_data_response(self) -> tuple[None, io.StringIO, dict[str, str]]:
         resource = None
         mime_type, body = self.pathname.split(",", maxsplit=1)
         headers = {"content-type": mime_type}

@@ -9,7 +9,7 @@ from .url import URL
 
 
 class TestLayout(TestCase):
-    def test_Layout(self):
+    def test_Layout(self) -> None:
         with patch("tkinter.font.Font", new=MockFont):
             url = URL("data:text/html,ab<br>c")
             _, body = url.request()
