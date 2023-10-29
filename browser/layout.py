@@ -1,6 +1,6 @@
 import tkinter
 import tkinter.font
-from typing import Literal, TypeAlias
+from typing import Literal, TypeAlias, Union
 
 from .font import get_font
 from .node import Element, Node, Text
@@ -13,30 +13,61 @@ unimplemented_tags: list[str] = []
 
 
 class Layout:
+    node: Node
+    parent: Union["Layout", None]
+    children: list["Layout"]
+
+
+class DocumentLayout(Layout):
     width: int
+    size: int
+
+    def __init__(self, node: Node, width: int, size: int):
+        self.node = node
+        self.width = width
+        self.size = size
+        self.parent = None
+        self.children = []
+
+    def layout(self) -> None:
+        child = BlockLayout(self.node, self, None, self.width, self.size)
+        self.children.append(child)
+        child.layout()
+        self.display_list = child.display_list
+
+        
+class BlockLayout(Layout):
+    previous: Layout | None
+    width: int
+    size: int
     vstep: int
     hstep: int
     cursor_x: int
     cursor_y: int
     weight: Literal["normal", "bold"]
     style: Literal["roman", "italic"]
-    size: int
     font: tkinter.font.Font
     line: list[LineItem]
     display_list: list[DisplayItem]
 
-    def __init__(self, root: Node, width: int, size: int):
+    def __init__(self, node: Node, parent: Layout, previous: Layout | None, width: int, size: int):
+        self.node = node
+        self.parent = parent
+        self.previous = previous
+        self.children = []
+        self.width = width
+        self.size = size
+
+    def layout(self) -> None:
         self.line = []
         self.display_list = []
-        self.size = size
         self.vstep = self.size * 2
         self.hstep = int(self.size * 1.5)
         self.cursor_x = self.hstep
         self.cursor_y = self.vstep
         self.weight = "normal"
         self.style = "roman"
-        self.width = width
-        self.recurse(root)
+        self.recurse(self.node)
         if self.line:
             self.flush()
 

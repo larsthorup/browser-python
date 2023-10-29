@@ -2,7 +2,7 @@ import os
 import tkinter
 import tkinter.font
 
-from .layout import Layout
+from .layout import DocumentLayout
 from .parser import HTMLParser
 from .url import URL
 
@@ -16,6 +16,7 @@ class Browser:
     canvas: tkinter.Canvas
     scroll: int
     document_text: str
+    document: DocumentLayout
     font_size: int
 
     def __init__(self) -> None:
@@ -39,8 +40,9 @@ class Browser:
 
     def render(self) -> None:
         self.root = HTMLParser(self.document_text).parse()
-        layout = Layout(self.root, self.width, self.font_size)
-        self.display_list = layout.display_list
+        self.document = DocumentLayout(self.root, self.width, self.font_size)
+        self.document.layout()
+        self.display_list = self.document.display_list
         self.draw()
 
     def draw(self) -> None:
