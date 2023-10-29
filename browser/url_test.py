@@ -1,7 +1,7 @@
 import io
 import os
 import pytest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from .url import URL
 
@@ -48,30 +48,55 @@ def test_data_request() -> None:
     assert body == "Hello World!"
 
 
-def test_request() -> None:
-    with patch("socket.socket") as socket:
-        s = socket.return_value
+@patch("socket.socket")
+def test_request(socket: MagicMock) -> None:
+    s = socket.return_value
 
-        # given that server responds
-        s.makefile.return_value = io.StringIO(
-            "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nHello World!"
-        )
+    # given that server responds
+    s.recv.side_effect = [bytes([byte]) for byte in b"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"]
+    s.makefile.return_value = io.StringIO(
+        "Hello World!"
+    )
 
-        # when requesting
-        url = URL("http://mockserver/")
-        headers, body = url.request()
+    # when requesting
+    url = URL("http://mockserver/")
+    headers, body = url.request()
 
-        # then connection was made
-        s.connect.assert_called_once_with(("mockserver", 80))
-        
-        # then request was sent
-        s.send.assert_called_once_with(
-            b"GET / HTTP/1.1\r\nHost: mockserver\r\nConnection: close\r\nUser-Agent: github.com/larsthorup/browser-python\r\n\r\n"
-        )
+    # then connection was made
+    s.connect.assert_called_once_with(("mockserver", 80))
+    
+    # then request was sent
+    s.send.assert_called_once_with(
+        b"GET / HTTP/1.1\r\nHost: mockserver\r\nConnection: close\r\nUser-Agent: github.com/larsthorup/browser-python\r\n\r\n"
+    )
 
-        # then headers and body is returned
-        assert headers == {"content-type": "text/html"}
-        assert body == "Hello World!"
+    # then headers and body is returned
+    assert headers == {"content-type": "text/html"}
+    assert body == "Hello World!"
+
+
+@patch("socket.socket")
+def test_request_transfer_encoding_chunked(socket: MagicMock) -> None:
+    s = socket.return_value
+
+    # given that server responds
+    s.recv.side_effect = [bytes([byte]) for byte in b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nHello\r\n7\r\n World!\r\n0\r\n\r\n"]
+
+    # when requesting
+    url = URL("http://mockserver/")
+    headers, body = url.request()
+
+    # then connection was made
+    s.connect.assert_called_once_with(("mockserver", 80))
+    
+    # then request was sent
+    s.send.assert_called_once_with(
+        b"GET / HTTP/1.1\r\nHost: mockserver\r\nConnection: close\r\nUser-Agent: github.com/larsthorup/browser-python\r\n\r\n"
+    )
+
+    # then headers and body is returned
+    assert headers == {"transfer-encoding": "chunked"}
+    assert body == "Hello World!"
 
 
 @pytest.mark.skipif(

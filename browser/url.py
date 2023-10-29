@@ -69,11 +69,8 @@ class URL:
         )
         s.send(request.encode("utf8"))
 
-        # receive response
-        response = s.makefile("r", encoding="utf8", newline="\r\n")
-
         # parse status
-        statusline = response.readline()
+        statusline = readline(s)
         _, status, explanation = statusline.split(" ", 2)
         assert status == "200", f"{status}: {explanation}"
         # TODO: handle redirects
@@ -81,15 +78,34 @@ class URL:
         # parse headers
         headers = {}
         while True:
-            line = response.readline()
+            line = readline(s)
             if line == "\r\n":
                 break
             header, value = line.split(":", 1)
             headers[header.lower()] = value.strip()
-        # assert "transfer-encoding" not in headers, headers
         assert "content-encoding" not in headers, headers
 
-        return s, response, headers
+        if headers.get('transfer-encoding') == "chunked":
+            body = ""
+            bytes = b""
+            while True:
+                line = readline(s)
+                print(line)
+                if line == "\r\n" or line == '':
+                    break
+                length = int(line, 16)
+                if length == 0:
+                    break
+                chunk = read_chunk(s, length)
+                bytes += chunk
+                crlf = read_chunk(s, 2)
+                assert crlf == b"\r\n", crlf
+            body = bytes.decode("utf8")
+            return s, io.StringIO(body), headers
+        else:
+            assert "transfer-encoding" not in headers, headers
+            response = s.makefile("r", encoding="utf8", newline="\r\n")
+            return s, response, headers
 
     def get_file_response(self) -> tuple[io.TextIOWrapper, io.TextIOWrapper, dict[str, str]]:
         # open file
@@ -105,3 +121,20 @@ class URL:
         headers = {"content-type": mime_type}
         file = io.StringIO(body)
         return resource, file, headers
+
+def readline(s: socket.socket) -> str:
+    bytes = b""
+    while True:
+        byte = s.recv(1)
+        bytes += byte
+        if byte == b"\n":
+            break
+    return bytes.decode("utf8")
+
+def read_chunk(s: socket.socket, length: int) -> bytes:
+    chunk = b""
+    while length > 0:
+        received = s.recv(length)
+        chunk += received
+        length -= len(received)
+    return chunk
